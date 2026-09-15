@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #050810;
+  --surface: #0d1117;
+  --border: #1e2d3d;
+  --accent: #6366f1;
+  --positive: #10b981;
+  --negative: #ef4444;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg);
+  color: #f1f5f9;
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0d1117; }
+::-webkit-scrollbar-thumb { background: #1e2d3d; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2d3f52; }
+
+.font-mono { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+
+@layer utilities {
+  .glow-accent { box-shadow: 0 0 20px rgba(99,102,241,0.25); }
+  .glow-green { box-shadow: 0 0 12px rgba(16,185,129,0.3); }
+  .glow-red { box-shadow: 0 0 12px rgba(239,68,68,0.3); }
+  .glass { background: rgba(13,17,23,0.7); backdrop-filter: blur(12px); }
+  .surface-hover { transition: background 0.2s ease; }
+  .surface-hover:hover { background: rgba(255,255,255,0.03); }
+}
