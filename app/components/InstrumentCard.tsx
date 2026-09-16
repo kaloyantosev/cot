@@ -136,7 +136,7 @@ export default function InstrumentCard({ instrument, onClick, index = 0 }: Instr
             className="text-[10px] font-mono font-semibold"
             style={{ color: '#64748b' }}
           >
-            {percentile}th pct
+            {percentile}%
           </span>
           <span className="text-[10px] font-mono text-[#475569]">MAX LONG</span>
         </div>

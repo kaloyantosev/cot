@@ -53,7 +53,7 @@ export default function CommandBar({
       const res = await fetch('/api/update');
       const data = await res.json();
       if (data.success) {
-        setUpdateStatus(`✓ CFTC Synced (${data.reportDate})`);
+        setUpdateStatus(`CFTC Synced (${data.reportDate})`);
         setTimeout(() => setUpdateStatus(null), 5000);
       } else {
         setUpdateStatus('Update notice received');
@@ -172,10 +172,10 @@ export default function CommandBar({
             }}
             title="Fetch latest report from CFTC on demand"
           >
-            <span className={isUpdating ? 'animate-spin' : ''}>
-              {isUpdating ? '↻' : updateStatus ? '✓' : '⚡'}
-            </span>
-            <span className="hidden sm:inline">
+            {isUpdating && (
+              <span className="w-2 h-2 rounded-full border border-current border-t-transparent animate-spin" />
+            )}
+            <span>
               {updateStatus || (isUpdating ? 'Updating...' : 'Update COT Data')}
             </span>
           </button>
@@ -233,7 +233,7 @@ export default function CommandBar({
                 onClick={handleUpdate}
                 className="text-xs font-mono text-[#818cf8] bg-[#6366f1]/20 px-2 py-0.5 rounded"
               >
-                ⚡ Update Now
+                Update Now
               </button>
             </div>
             <CountdownTimer />

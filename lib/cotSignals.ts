@@ -1,5 +1,6 @@
 import { getPercentile, getSignalFromPercentile, isCrossover, type COTSignalType } from './utils';
 import { instruments } from './mockData';
+import { analyzeBrieseCOT, type BrieseAnalysisResult } from './brieseModels';
 
 export interface COTSignal {
   contractId: string;
@@ -15,6 +16,7 @@ export interface COTSignal {
   dealerBias: 'BULLISH (DEALER SHORT)' | 'BEARISH (DEALER LONG)' | 'NET SHORT HEDGING' | 'NET LONG ACCUMULATION';
   signal: COTSignalType;
   isCrossover: boolean;
+  briese: BrieseAnalysisResult;
 }
 
 export function computeAllSignals(): COTSignal[] {
@@ -61,6 +63,7 @@ export function computeAllSignals(): COTSignal[] {
       dealerBias,
       signal: crossover ? 'CROSSOVER' : baseSignal,
       isCrossover: crossover,
+      briese: analyzeBrieseCOT(inst),
     };
   });
 }

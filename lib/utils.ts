@@ -62,20 +62,7 @@ export function getSignalColor(signal: string): string {
 }
 
 export function getSignalEmoji(signal: string): string {
-  switch (signal) {
-    case 'EXTREME_LONG':
-      return '🟢';
-    case 'NET_LONG':
-      return '🔼';
-    case 'NET_SHORT':
-      return '🔽';
-    case 'EXTREME_SHORT':
-      return '🔴';
-    case 'CROSSOVER':
-      return '⚡';
-    default:
-      return '📊';
-  }
+  return '';
 }
 
 export function ordinalSuffix(n: number): string {

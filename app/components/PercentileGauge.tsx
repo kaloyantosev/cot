@@ -22,9 +22,12 @@ export default function PercentileGauge({
   const clamped = Math.max(0, Math.min(100, Math.round(percentile)));
   const angle = -180 + (clamped / 100) * 180;
 
-  const radius = 75;
   const cx = 100;
-  const cy = 95;
+  const cy = 68;
+  const needleLength = 50;
+
+  // Safe SVG element ID (no spaces or parentheses)
+  const safeId = 'gauge_' + label.replace(/[^a-zA-Z0-9]/g, '_');
 
   let biasText = clamped >= 50 ? 'NET LONG' : 'NET SHORT';
   if (clamped >= 80) biasText = 'CROWDED LONG';
@@ -32,7 +35,7 @@ export default function PercentileGauge({
 
   return (
     <div className="flex flex-col items-center p-4 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md w-full">
-      <div className="flex items-center justify-between w-full mb-1">
+      <div className="flex items-center justify-between w-full mb-2">
         <span className="text-xs font-mono uppercase font-bold text-[#94a3b8] tracking-wider truncate">
           {label}
         </span>
@@ -48,11 +51,11 @@ export default function PercentileGauge({
         </span>
       </div>
 
-      {/* SVG Semicircle Speedometer */}
-      <div className="relative flex items-center justify-center" style={{ width: size, height: size * 0.6 }}>
-        <svg viewBox="0 0 200 120" className="w-full h-full overflow-visible">
+      {/* SVG Semicircle Speedometer with needle above and text cleanly below pivot */}
+      <div className="relative flex items-center justify-center w-full" style={{ maxWidth: size, height: size * 0.58 }}>
+        <svg viewBox="0 0 200 114" className="w-full h-full overflow-visible">
           <defs>
-            <linearGradient id={`gaugeTrack_${label.replace(/\s+/g, '')}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient id={safeId} x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#ef4444" />
               <stop offset="35%" stopColor="#f97316" />
               <stop offset="65%" stopColor="#22c55e" />
@@ -60,21 +63,39 @@ export default function PercentileGauge({
             </linearGradient>
           </defs>
 
+          {/* Semicircle track (radius 60, centered at 100, 68) */}
           <path
-            d="M 25 95 A 75 75 0 0 1 175 95"
+            d="M 40 68 A 60 60 0 0 1 160 68"
             fill="none"
-            stroke={`url(#gaugeTrack_${label.replace(/\s+/g, '')})`}
-            strokeWidth="12"
+            stroke={`url(#${safeId})`}
+            strokeWidth="10"
             strokeLinecap="round"
           />
 
+          {/* Needle - sweeps exclusively through the upper semicircle (y <= cy) */}
+          <g transform={`rotate(${angle} ${cx} ${cy})`}>
+            <line
+              x1={cx}
+              y1={cy}
+              x2={cx + needleLength}
+              y2={cy}
+              stroke="#ffffff"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              className="drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]"
+            />
+            <circle cx={cx} cy={cy} r="4" fill="#ffffff" />
+            <circle cx={cx} cy={cy} r="2" fill="#6366f1" />
+          </g>
+
+          {/* Text placed cleanly below the pivot point so needle NEVER intersects text */}
           <text
             x={cx}
-            y={cy - 10}
+            y={cy + 22}
             textAnchor="middle"
             className="font-mono font-extrabold"
             fill="#f1f5f9"
-            fontSize="24"
+            fontSize="22"
           >
             {clamped}
             <tspan fontSize="12" fill="#6366f1" dx="2">
@@ -83,30 +104,14 @@ export default function PercentileGauge({
           </text>
           <text
             x={cx}
-            y={cy + 8}
+            y={cy + 36}
             textAnchor="middle"
-            className="font-mono"
+            className="font-mono tracking-wider font-semibold"
             fill="#64748b"
-            fontSize="9"
+            fontSize="8.5"
           >
             PERCENTILE RANK
           </text>
-
-          {/* Needle */}
-          <g transform={`rotate(${angle} ${cx} ${cy})`}>
-            <line
-              x1={cx}
-              y1={cy}
-              x2={cx + radius - 4}
-              y2={cy}
-              stroke="#ffffff"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              className="drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]"
-            />
-            <circle cx={cx} cy={cy} r="4.5" fill="#ffffff" />
-            <circle cx={cx} cy={cy} r="2" fill="#6366f1" />
-          </g>
         </svg>
       </div>
 

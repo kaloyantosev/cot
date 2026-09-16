@@ -16,7 +16,6 @@ export default function AssetGrid({ category, instruments, onSelect }: AssetGrid
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
-        <span className="text-4xl mb-3">📊</span>
         <h3 className="text-lg font-bold text-white font-mono">No Instruments Found</h3>
         <p className="text-sm text-[#64748b]">Select another asset category from the navigation bar.</p>
       </div>

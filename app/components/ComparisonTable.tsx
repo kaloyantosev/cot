@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Instrument } from '@/lib/mockData';
 import { formatNumber, formatNumberSigned, formatPct, formatDate } from '@/lib/utils';
 
@@ -19,12 +19,24 @@ export default function ComparisonTable({
 }: ComparisonTableProps) {
   const history = instrument.history;
   const dates = history.map((h) => h.date);
+  const reversedDates = [...dates].reverse();
 
   const defaultDate2 = initialDate2 || dates[dates.length - 1];
   const defaultDate1 = initialDate1 || dates[Math.max(0, dates.length - 5)];
 
   const [date1, setDate1] = useState<string>(defaultDate1);
   const [date2, setDate2] = useState<string>(defaultDate2);
+
+  // Sync date state when props change or instrument changes
+  useEffect(() => {
+    if (initialDate1) setDate1(initialDate1);
+    else setDate1(dates[Math.max(0, dates.length - 5)] || '');
+  }, [initialDate1, instrument.id]);
+
+  useEffect(() => {
+    if (initialDate2) setDate2(initialDate2);
+    else setDate2(dates[dates.length - 1] || '');
+  }, [initialDate2, instrument.id]);
 
   const d1 = history.find((h) => h.date === date1) || history[0];
   const d2 = history.find((h) => h.date === date2) || history[history.length - 1];
@@ -44,32 +56,8 @@ export default function ComparisonTable({
 
   const rows: TableRow[] = [];
 
+  // Dealers are placed at the bottom/end of the table
   if (instrument.isFinancial) {
-    rows.push({
-      category: 'Dealers',
-      catColor: '#f59e0b',
-      pos: 'Long',
-      val1: d1.dealer_long ?? 0,
-      val2: d2.dealer_long ?? 0,
-      isFirst: true,
-      long1: d1.dealer_long ?? 0,
-      short1: d1.dealer_short ?? 0,
-      long2: d2.dealer_long ?? 0,
-      short2: d2.dealer_short ?? 0,
-    });
-    rows.push({
-      category: 'Dealers',
-      catColor: '#f59e0b',
-      pos: 'Short',
-      val1: d1.dealer_short ?? 0,
-      val2: d2.dealer_short ?? 0,
-      isFirst: false,
-      long1: d1.dealer_long ?? 0,
-      short1: d1.dealer_short ?? 0,
-      long2: d2.dealer_long ?? 0,
-      short2: d2.dealer_short ?? 0,
-    });
-
     rows.push({
       category: 'Asset Managers',
       catColor: '#3b82f6',
@@ -119,32 +107,34 @@ export default function ComparisonTable({
       long2: d2.lev_long ?? 0,
       short2: d2.lev_short ?? 0,
     });
-  } else {
-    rows.push({
-      category: 'Producers',
-      catColor: '#6366f1',
-      pos: 'Long',
-      val1: d1.prod_long ?? 0,
-      val2: d2.prod_long ?? 0,
-      isFirst: true,
-      long1: d1.prod_long ?? 0,
-      short1: d1.prod_short ?? 0,
-      long2: d2.prod_long ?? 0,
-      short2: d2.prod_short ?? 0,
-    });
-    rows.push({
-      category: 'Producers',
-      catColor: '#6366f1',
-      pos: 'Short',
-      val1: d1.prod_short ?? 0,
-      val2: d2.prod_short ?? 0,
-      isFirst: false,
-      long1: d1.prod_long ?? 0,
-      short1: d1.prod_short ?? 0,
-      long2: d2.prod_long ?? 0,
-      short2: d2.prod_short ?? 0,
-    });
 
+    // Dealers at the bottom
+    rows.push({
+      category: 'Dealers',
+      catColor: '#f59e0b',
+      pos: 'Long',
+      val1: d1.dealer_long ?? 0,
+      val2: d2.dealer_long ?? 0,
+      isFirst: true,
+      long1: d1.dealer_long ?? 0,
+      short1: d1.dealer_short ?? 0,
+      long2: d2.dealer_long ?? 0,
+      short2: d2.dealer_short ?? 0,
+    });
+    rows.push({
+      category: 'Dealers',
+      catColor: '#f59e0b',
+      pos: 'Short',
+      val1: d1.dealer_short ?? 0,
+      val2: d2.dealer_short ?? 0,
+      isFirst: false,
+      long1: d1.dealer_long ?? 0,
+      short1: d1.dealer_short ?? 0,
+      long2: d2.dealer_long ?? 0,
+      short2: d2.dealer_short ?? 0,
+    });
+  } else {
+    // Managed Money first, Producers second
     rows.push({
       category: 'Managed Money',
       catColor: '#10b981',
@@ -169,6 +159,31 @@ export default function ComparisonTable({
       long2: d2.mm_long ?? 0,
       short2: d2.mm_short ?? 0,
     });
+
+    rows.push({
+      category: 'Producers',
+      catColor: '#6366f1',
+      pos: 'Long',
+      val1: d1.prod_long ?? 0,
+      val2: d2.prod_long ?? 0,
+      isFirst: true,
+      long1: d1.prod_long ?? 0,
+      short1: d1.prod_short ?? 0,
+      long2: d2.prod_long ?? 0,
+      short2: d2.prod_short ?? 0,
+    });
+    rows.push({
+      category: 'Producers',
+      catColor: '#6366f1',
+      pos: 'Short',
+      val1: d1.prod_short ?? 0,
+      val2: d2.prod_short ?? 0,
+      isFirst: false,
+      long1: d1.prod_long ?? 0,
+      short1: d1.prod_short ?? 0,
+      long2: d2.prod_long ?? 0,
+      short2: d2.prod_short ?? 0,
+    });
   }
 
   const calcRatio = (l: number, s: number) => {
@@ -180,7 +195,7 @@ export default function ComparisonTable({
     <div className="flex flex-col gap-4 p-5 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h4 className="text-xs font-mono font-bold text-white uppercase flex items-center gap-1.5">
-          <span>📋</span> Two-Report Comparative Audit
+          Two-Report Comparative Audit
         </h4>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -191,7 +206,7 @@ export default function ComparisonTable({
               onChange={(e) => setDate1(e.target.value)}
               className="bg-[#0a0e19] border border-[#1e2d3d] rounded-lg px-2.5 py-1 text-xs font-mono text-white outline-none focus:border-[#6366f1]"
             >
-              {dates.map((d) => (
+              {reversedDates.map((d) => (
                 <option key={d} value={d}>
                   {formatDate(d)}
                 </option>
@@ -208,7 +223,7 @@ export default function ComparisonTable({
               onChange={(e) => setDate2(e.target.value)}
               className="bg-[#0a0e19] border border-[#1e2d3d] rounded-lg px-2.5 py-1 text-xs font-mono text-white outline-none focus:border-[#6366f1]"
             >
-              {dates.map((d) => (
+              {reversedDates.map((d) => (
                 <option key={d} value={d}>
                   {formatDate(d)}
                 </option>

@@ -126,7 +126,7 @@ export default function CountdownTimer() {
         className="font-mono text-xs font-semibold tracking-wide"
         style={{ color: '#10b981' }}
       >
-        🟢 LIVE — Data Released Today
+        LIVE — Data Released Today
       </span>
     );
   }

@@ -3,15 +3,16 @@
 import { motion } from 'framer-motion';
 import { instruments } from '@/lib/mockData';
 import { getPercentile, getSignalFromPercentile } from '@/lib/utils';
+import { analyzeBrieseCOT } from '@/lib/brieseModels';
 import SignalBadge from './SignalBadge';
 
 interface HeatmapCellData {
   category: string;
   catLabel: string;
-  mmPercentile: number;
-  amPercentile: number;
+  commercialPercentile: number;
+  specPercentile: number;
+  brieseComposite: number;
   dealerPercentile: number;
-  allPercentile: number;
 }
 
 const CATEGORIES = [
@@ -35,45 +36,51 @@ export default function CrossMarketHeatmap() {
   const heatmapData: HeatmapCellData[] = CATEGORIES.map((cat) => {
     const subset = instruments.filter((i) => i.category === cat.key);
 
-    let mmPcts: number[] = [];
-    let amPcts: number[] = [];
+    let commPcts: number[] = [];
+    let specPcts: number[] = [];
+    let brieseScores: number[] = [];
     let dealerPcts: number[] = [];
 
     subset.forEach((inst) => {
+      // Briese Analysis
+      const briese = analyzeBrieseCOT(inst);
+      brieseScores.push(briese.cotIndex3Y);
+
+      // Speculator Percentile
       const allNets = inst.history.map((h) => h.netLong);
-      const mmPct = getPercentile(inst.netPosition, allNets);
-      mmPcts.push(mmPct);
+      const specPct = getPercentile(inst.netPosition, allNets);
+      specPcts.push(specPct);
 
       if (inst.isFinancial) {
+        // Asset Managers are Commercial/Institutional Smart Money in Financials
         const allAmNets = inst.history.map((h) => (h.asset_long ?? 0) - (h.asset_short ?? 0));
         const latestAm = (inst.history[inst.history.length - 1].asset_long ?? 0) - (inst.history[inst.history.length - 1].asset_short ?? 0);
-        amPcts.push(getPercentile(latestAm, allAmNets));
+        commPcts.push(getPercentile(latestAm, allAmNets));
 
+        // Dealers are intermediaries / contra-hedgers
         const allDealerNets = inst.history.map((h) => (h.dealer_long ?? 0) - (h.dealer_short ?? 0));
         const latestDealer = (inst.history[inst.history.length - 1].dealer_long ?? 0) - (inst.history[inst.history.length - 1].dealer_short ?? 0);
         dealerPcts.push(getPercentile(latestDealer, allDealerNets));
       } else {
+        // Physical Producers are the primary Commercial Hedgers in Commodities
         const allProdNets = inst.history.map((h) => (h.prod_long ?? 0) - (h.prod_short ?? 0));
         const latestProd = (inst.history[inst.history.length - 1].prod_long ?? 0) - (inst.history[inst.history.length - 1].prod_short ?? 0);
-        dealerPcts.push(getPercentile(latestProd, allProdNets));
-        amPcts.push(50);
+        commPcts.push(getPercentile(latestProd, allProdNets));
+
+        // No dealers in physical commodities; neutral benchmark
+        dealerPcts.push(50);
       }
     });
 
     const avg = (arr: number[]) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 50);
 
-    const mmAvg = avg(mmPcts);
-    const amAvg = avg(amPcts);
-    const dealerAvg = avg(dealerPcts);
-    const allAvg = Math.round((mmAvg + amAvg + dealerAvg) / 3);
-
     return {
       category: cat.key,
       catLabel: cat.label,
-      mmPercentile: mmAvg,
-      amPercentile: amAvg,
-      dealerPercentile: dealerAvg,
-      allPercentile: allAvg,
+      commercialPercentile: avg(commPcts),
+      specPercentile: avg(specPcts),
+      brieseComposite: avg(brieseScores),
+      dealerPercentile: avg(dealerPcts),
     };
   });
 
@@ -96,79 +103,93 @@ export default function CrossMarketHeatmap() {
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto">
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-bold text-white font-mono flex items-center gap-2">
-          <span>🌐</span> Cross-Market Positioning Heatmap
+          Cross-Market Institutional Heatmap &amp; Briese Composite
         </h2>
         <p className="text-xs text-[#64748b]">
-          Real-time institutional capital concentration and statistical positioning percentiles across asset classes.
+          Cross-sector capital positioning: Commercial Insiders (Producers/Asset Managers), Speculative Funds, and Stephen Briese Composite Indexes.
         </p>
       </div>
 
       <div className="p-5 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md overflow-x-auto">
-        <table className="w-full text-left font-mono border-collapse min-w-[640px]">
+        <table className="w-full text-left font-mono border-collapse min-w-[700px]">
           <thead>
             <tr className="border-b border-[#1e2d3d] text-xs uppercase text-[#64748b]">
               <th className="p-3 w-1/4">Asset Class</th>
-              <th className="p-3 text-center">Managed Money / Lev Funds</th>
-              <th className="p-3 text-center">Asset Managers</th>
-              <th className="p-3 text-center">Dealers / Producers</th>
-              <th className="p-3 text-center">Composite Positioning</th>
+              {/* Primary Insiders first */}
+              <th className="p-3 text-center">Commercial Insiders (Producers/Asset Mgrs)</th>
+              {/* Speculative crowd second */}
+              <th className="p-3 text-center">Large Speculators (Managed Money/Lev Funds)</th>
+              {/* Briese Model Composite third */}
+              <th className="p-3 text-center">Briese 3Y Composite Index</th>
+              {/* Dealers placed at the bottom/end */}
+              <th className="p-3 text-center text-[#475569]">Dealers (Contra Inventory)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1e2d3d]/50">
             {heatmapData.map((row) => {
-              const mmStyle = getCellColor(row.mmPercentile);
-              const amStyle = getCellColor(row.amPercentile);
+              const commStyle = getCellColor(row.commercialPercentile);
+              const specStyle = getCellColor(row.specPercentile);
+              const brieseStyle = getCellColor(row.brieseComposite);
               const dealerStyle = getCellColor(row.dealerPercentile);
-              const allStyle = getCellColor(row.allPercentile);
 
               return (
                 <tr key={row.category} className="hover:bg-white/[0.01] transition-colors">
                   <td className="p-3 font-bold text-white text-sm">{row.catLabel}</td>
 
+                  {/* Commercial Insiders */}
                   <td className="p-2 text-center">
                     <div
                       className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-transform hover:scale-105"
-                      style={{ background: mmStyle.bg, borderColor: mmStyle.border, color: mmStyle.text }}
+                      style={{ background: commStyle.bg, borderColor: commStyle.border, color: commStyle.text }}
                     >
-                      <span className="font-bold text-sm">{row.mmPercentile}%</span>
+                      <span className="font-bold text-sm">{row.commercialPercentile}%</span>
                       <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
-                        {row.mmPercentile >= 50 ? 'NET LONG' : 'NET SHORT'}
+                        {row.commercialPercentile >= 50 ? 'ACCUMULATION' : 'SHORT HEDGING'}
                       </span>
                     </div>
                   </td>
 
+                  {/* Large Speculators */}
                   <td className="p-2 text-center">
                     <div
                       className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-transform hover:scale-105"
-                      style={{ background: amStyle.bg, borderColor: amStyle.border, color: amStyle.text }}
+                      style={{ background: specStyle.bg, borderColor: specStyle.border, color: specStyle.text }}
                     >
-                      <span className="font-bold text-sm">{row.amPercentile}%</span>
+                      <span className="font-bold text-sm">{row.specPercentile}%</span>
                       <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
-                        {row.amPercentile >= 50 ? 'NET LONG' : 'NET SHORT'}
+                        {row.specPercentile >= 50 ? 'NET LONG' : 'NET SHORT'}
                       </span>
                     </div>
                   </td>
 
+                  {/* Briese 3Y Composite Index */}
                   <td className="p-2 text-center">
                     <div
                       className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-transform hover:scale-105"
+                      style={{ background: brieseStyle.bg, borderColor: brieseStyle.border, color: brieseStyle.text }}
+                    >
+                      <span className="font-bold text-sm">{row.brieseComposite}%</span>
+                      <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
+                        {row.brieseComposite >= 80
+                          ? 'BUYING CLIMAX'
+                          : row.brieseComposite <= 20
+                          ? 'SELLING CLIMAX'
+                          : row.brieseComposite >= 50
+                          ? 'BULLISH BIAS'
+                          : 'BEARISH BIAS'}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Dealers (Contra Inventory - at the bottom/end) */}
+                  <td className="p-2 text-center">
+                    <div
+                      className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center"
                       style={{ background: dealerStyle.bg, borderColor: dealerStyle.border, color: dealerStyle.text }}
                     >
                       <span className="font-bold text-sm">{row.dealerPercentile}%</span>
                       <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
                         {row.dealerPercentile >= 50 ? 'INVENTORY LONG' : 'SHORT HEDGING'}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="p-2 text-center">
-                    <div
-                      className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center"
-                      style={{ background: allStyle.bg, borderColor: allStyle.border, color: allStyle.text }}
-                    >
-                      <span className="font-bold text-sm">{row.allPercentile}%</span>
-                      <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
-                        {row.allPercentile >= 50 ? 'LONG-TILT' : 'SHORT-TILT'}
                       </span>
                     </div>
                   </td>
@@ -182,7 +203,6 @@ export default function CrossMarketHeatmap() {
       <div className="p-5 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-base">🔥</span>
             <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider">
               Top 6 Crowded Institutional Trades (By Statistical Distance)
             </h3>
@@ -222,7 +242,7 @@ export default function CrossMarketHeatmap() {
                     className="font-mono text-xs font-extrabold"
                     style={{ color: isLong ? '#10b981' : '#ef4444' }}
                   >
-                    {item.pct}th %ile
+                    {item.pct}%
                   </span>
                 </div>
               </motion.div>

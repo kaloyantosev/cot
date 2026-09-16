@@ -84,7 +84,7 @@ export default function PositioningTimeline({ instrument, customHistory }: Posit
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono font-bold text-white uppercase flex items-center gap-1.5">
-            <span>📈</span> Positioning Trajectory ({historySlice.length} Reports: {formatDate(historySlice[0]?.date)} — {formatDate(historySlice[historySlice.length - 1]?.date)})
+            Positioning Trajectory ({historySlice.length} Reports: {formatDate(historySlice[0]?.date)} — {formatDate(historySlice[historySlice.length - 1]?.date)})
           </span>
         </div>
 
@@ -174,15 +174,6 @@ export default function PositioningTimeline({ instrument, customHistory }: Posit
                 <Line
                   yAxisId="left"
                   type="monotone"
-                  dataKey="dealerNet"
-                  name="Dealers Net"
-                  stroke="#f59e0b"
-                  strokeWidth={1.8}
-                  dot={false}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
                   dataKey="assetNet"
                   name="Asset Managers Net"
                   stroke="#3b82f6"
@@ -198,18 +189,18 @@ export default function PositioningTimeline({ instrument, customHistory }: Posit
                   strokeWidth={2.2}
                   dot={false}
                 />
-              </>
-            ) : (
-              <>
                 <Line
                   yAxisId="left"
                   type="monotone"
-                  dataKey="prodNet"
-                  name="Commercial Producers Net"
-                  stroke="#6366f1"
+                  dataKey="dealerNet"
+                  name="Dealers Net"
+                  stroke="#f59e0b"
                   strokeWidth={1.8}
                   dot={false}
                 />
+              </>
+            ) : (
+              <>
                 <Line
                   yAxisId="left"
                   type="monotone"
@@ -217,6 +208,15 @@ export default function PositioningTimeline({ instrument, customHistory }: Posit
                   name="Managed Money Net"
                   stroke="#10b981"
                   strokeWidth={2.2}
+                  dot={false}
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="prodNet"
+                  name="Commercial Producers Net"
+                  stroke="#6366f1"
+                  strokeWidth={1.8}
                   dot={false}
                 />
                 <Line

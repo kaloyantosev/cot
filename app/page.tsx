@@ -5,13 +5,13 @@ import { motion } from 'framer-motion';
 
 import CommandBar from './components/CommandBar';
 import AssetGrid from './components/AssetGrid';
-import ParticipantRow from './components/ParticipantRow';
 import PositioningTimeline from './components/PositioningTimeline';
 import PercentileGauge from './components/PercentileGauge';
 import ComparisonTable from './components/ComparisonTable';
 import Screener from './components/Screener';
 import CrossMarketHeatmap from './components/CrossMarketHeatmap';
-import EducationalSidebar from './components/EducationalSidebar';
+import BrieseAnalysisPanel from './components/BrieseAnalysisPanel';
+import BrieseSectorComposites from './components/BrieseSectorComposites';
 
 import { instruments, type Instrument } from '@/lib/mockData';
 import { generateCOTSummary } from '@/lib/cotSignals';
@@ -24,7 +24,6 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState<string>('equities');
   const [selectedContract, setSelectedContract] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
   // Period Selector State
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodPreset>('1Y');
@@ -41,8 +40,10 @@ export default function HomePage() {
     const full = currentInstrument.history;
     if (full.length === 0) return [];
 
-    if (customStartDate && customEndDate) {
-      const sliced = full.filter((h) => h.date >= customStartDate && h.date <= customEndDate);
+    if (customStartDate || customEndDate) {
+      const start = customStartDate || full[0]?.date || '';
+      const end = customEndDate || full[full.length - 1]?.date || '';
+      const sliced = full.filter((h) => h.date >= start && h.date <= end);
       if (sliced.length > 0) return sliced;
     }
 
@@ -117,7 +118,7 @@ export default function HomePage() {
                 : { color: '#94a3b8' }
             }
           >
-            📊 Dashboard
+            Dashboard
           </button>
           <button
             onClick={() => setActiveTab('screener')}
@@ -128,7 +129,7 @@ export default function HomePage() {
                 : { color: '#94a3b8' }
             }
           >
-            ⚡ Signal Screener
+            Signal Screener
           </button>
           <button
             onClick={() => setActiveTab('heatmap')}
@@ -139,21 +140,14 @@ export default function HomePage() {
                 : { color: '#94a3b8' }
             }
           >
-            🌐 Cross-Market Heatmap
+            Cross-Market Heatmap
           </button>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="hidden sm:inline-block font-mono text-[10px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/25">
+          <span className="font-mono text-[10px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/25">
             OFFICIAL CFTC DATA · 2018 – PRESENT
           </span>
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-[#1e2d3d] hover:border-[#6366f1] text-[#94a3b8] hover:text-white transition-colors"
-          >
-            <span>📚</span>
-            <span>How to Read COT</span>
-          </button>
         </div>
       </div>
 
@@ -204,20 +198,24 @@ export default function HomePage() {
 
             {/* ASSET GRID (when no contract is selected) */}
             {!selectedContract && (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                    <span>⚡</span> Tracked {activeCategory.toUpperCase()} Futures
-                  </h3>
-                  <span className="text-xs font-mono text-[#64748b]">
-                    Click any contract to load complete unified analysis
-                  </span>
+              <div className="flex flex-col gap-6">
+                <BrieseSectorComposites instruments={instruments} />
+
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                      Tracked {activeCategory.toUpperCase()} Futures
+                    </h3>
+                    <span className="text-xs font-mono text-[#64748b]">
+                      Click any contract to load complete unified analysis
+                    </span>
+                  </div>
+                  <AssetGrid
+                    category={activeCategory}
+                    instruments={instruments}
+                    onSelect={(id) => handleContractSelect(id)}
+                  />
                 </div>
-                <AssetGrid
-                  category={activeCategory}
-                  instruments={instruments}
-                  onSelect={(id) => handleContractSelect(id)}
-                />
               </div>
             )}
 
@@ -282,15 +280,21 @@ export default function HomePage() {
                       </button>
                     ))}
 
-                    {/* Date Pickers for Custom Range */}
+                    {/* Date Pickers for Custom Range (Newest dates first) */}
                     <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-[#1e2d3d]">
                       <select
                         value={customStartDate || filteredHistory[0]?.date || ''}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomStartDate(val);
+                          if (!customEndDate) {
+                            setCustomEndDate(filteredHistory[filteredHistory.length - 1]?.date || '');
+                          }
+                        }}
                         className="bg-[#0a0e19] border border-[#1e2d3d] rounded px-2 py-1 text-xs font-mono text-white outline-none focus:border-[#6366f1]"
                         title="Start Date"
                       >
-                        {currentInstrument.history.map((h) => (
+                        {[...currentInstrument.history].reverse().map((h) => (
                           <option key={h.date} value={h.date}>
                             {formatDate(h.date)}
                           </option>
@@ -303,11 +307,17 @@ export default function HomePage() {
                           filteredHistory[filteredHistory.length - 1]?.date ||
                           ''
                         }
-                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomEndDate(val);
+                          if (!customStartDate) {
+                            setCustomStartDate(filteredHistory[0]?.date || '');
+                          }
+                        }}
                         className="bg-[#0a0e19] border border-[#1e2d3d] rounded px-2 py-1 text-xs font-mono text-white outline-none focus:border-[#6366f1]"
                         title="End Date"
                       >
-                        {currentInstrument.history.map((h) => (
+                        {[...currentInstrument.history].reverse().map((h) => (
                           <option key={h.date} value={h.date}>
                             {formatDate(h.date)}
                           </option>
@@ -323,11 +333,17 @@ export default function HomePage() {
                   customHistory={filteredHistory}
                 />
 
-                {/* 3. SECTION: INSTITUTIONAL PERCENTILE GAUGES */}
+                {/* 3. SECTION: STEPHEN BRIESE COT MODEL & CME COMMERCIAL ANALYTICS */}
+                <BrieseAnalysisPanel
+                  instrument={currentInstrument}
+                  filteredHistory={filteredHistory}
+                />
+
+                {/* 4. SECTION: INSTITUTIONAL PERCENTILE GAUGES */}
                 <div>
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      <span>🎯</span> Statistical Percentile Distribution ({filteredHistory.length} Reports)
+                      Statistical Percentile Distribution ({filteredHistory.length} Reports)
                     </h3>
                     <span className="text-[11px] font-mono text-[#64748b]">
                       Ranked over {formatDate(filteredHistory[0]?.date)} — {formatDate(filteredHistory[filteredHistory.length - 1]?.date)}
@@ -354,13 +370,6 @@ export default function HomePage() {
                       return (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <PercentileGauge
-                            label="Dealers / Intermediaries"
-                            percentile={getPercentile(dNet, allDealer)}
-                            currentNet={dNet}
-                            highNet={Math.max(...allDealer)}
-                            lowNet={Math.min(...allDealer)}
-                          />
-                          <PercentileGauge
                             label="Asset Managers"
                             percentile={getPercentile(aNet, allAsset)}
                             currentNet={aNet}
@@ -373,6 +382,13 @@ export default function HomePage() {
                             currentNet={lNet}
                             highNet={Math.max(...allLev)}
                             lowNet={Math.min(...allLev)}
+                          />
+                          <PercentileGauge
+                            label="Dealers / Intermediaries"
+                            percentile={getPercentile(dNet, allDealer)}
+                            currentNet={dNet}
+                            highNet={Math.max(...allDealer)}
+                            lowNet={Math.min(...allDealer)}
                           />
                         </div>
                       );
@@ -404,7 +420,7 @@ export default function HomePage() {
                             lowNet={Math.min(...allProd)}
                           />
                           <PercentileGauge
-                            label="Managed Money (CTAs)"
+                            label="Managed Money (Funds)"
                             percentile={getPercentile(mNet, allMm)}
                             currentNet={mNet}
                             highNet={Math.max(...allMm)}
@@ -423,136 +439,16 @@ export default function HomePage() {
                   )}
                 </div>
 
-                {/* 4. SECTION: PARTICIPANT DETAILED FLOW BREAKDOWN */}
-                <div>
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      <span>👥</span> Participant Positions & Flow Breakdown
-                    </h3>
-                    <span className="text-[11px] font-mono text-[#64748b]">
-                      Latest Report: {formatDate(filteredHistory[filteredHistory.length - 1]?.date)}
-                    </span>
-                  </div>
-
-                  {(() => {
-                    const latest = filteredHistory[filteredHistory.length - 1];
-                    const prev =
-                      filteredHistory.length >= 2
-                        ? filteredHistory[filteredHistory.length - 2]
-                        : latest;
-
-                    if (currentInstrument.isFinancial) {
-                      const allDealer = filteredHistory.map(
-                        (h) => (h.dealer_long ?? 0) - (h.dealer_short ?? 0)
-                      );
-                      const allAsset = filteredHistory.map(
-                        (h) => (h.asset_long ?? 0) - (h.asset_short ?? 0)
-                      );
-                      const allLev = filteredHistory.map(
-                        (h) => (h.lev_long ?? 0) - (h.lev_short ?? 0)
-                      );
-
-                      const dNet = (latest.dealer_long ?? 0) - (latest.dealer_short ?? 0);
-                      const aNet = (latest.asset_long ?? 0) - (latest.asset_short ?? 0);
-                      const lNet = (latest.lev_long ?? 0) - (latest.lev_short ?? 0);
-
-                      return (
-                        <div className="flex flex-col gap-3">
-                          <ParticipantRow
-                            name="Dealers / Intermediaries"
-                            color="#f59e0b"
-                            role="Banks & prime brokers warehousing structured client exposure. Net short position acts as a structural contra-hedging indicator."
-                            long={latest.dealer_long ?? 0}
-                            short={latest.dealer_short ?? 0}
-                            prevLong={prev.dealer_long ?? 0}
-                            prevShort={prev.dealer_short ?? 0}
-                            percentile={Math.round(getPercentile(dNet, allDealer))}
-                            isContra={true}
-                          />
-                          <ParticipantRow
-                            name="Asset Managers / Institutional"
-                            color="#3b82f6"
-                            role="Pension funds, endowments, and mutual funds holding long-term macroeconomic positions."
-                            long={latest.asset_long ?? 0}
-                            short={latest.asset_short ?? 0}
-                            prevLong={prev.asset_long ?? 0}
-                            prevShort={prev.asset_short ?? 0}
-                            percentile={Math.round(getPercentile(aNet, allAsset))}
-                          />
-                          <ParticipantRow
-                            name="Leveraged Funds (Hedge Funds & CTAs)"
-                            color="#8b5cf6"
-                            role="Trend-following hedge funds and momentum CTAs with active directional leverage."
-                            long={latest.lev_long ?? 0}
-                            short={latest.lev_short ?? 0}
-                            prevLong={prev.lev_long ?? 0}
-                            prevShort={prev.lev_short ?? 0}
-                            percentile={Math.round(getPercentile(lNet, allLev))}
-                          />
-                        </div>
-                      );
-                    } else {
-                      const allProd = filteredHistory.map(
-                        (h) => (h.prod_long ?? 0) - (h.prod_short ?? 0)
-                      );
-                      const allMm = filteredHistory.map(
-                        (h) => (h.mm_long ?? 0) - (h.mm_short ?? 0)
-                      );
-                      const allOther = filteredHistory.map(
-                        (h) => (h.other_long ?? 0) - (h.other_short ?? 0)
-                      );
-
-                      const pNet = (latest.prod_long ?? 0) - (latest.prod_short ?? 0);
-                      const mNet = (latest.mm_long ?? 0) - (latest.mm_short ?? 0);
-                      const oNet = (latest.other_long ?? 0) - (latest.other_short ?? 0);
-
-                      return (
-                        <div className="flex flex-col gap-3">
-                          <ParticipantRow
-                            name="Commercial Producers / Merchants"
-                            color="#6366f1"
-                            role="Physical commercial producers hedging extraction and forward inventory."
-                            long={latest.prod_long ?? 0}
-                            short={latest.prod_short ?? 0}
-                            prevLong={prev.prod_long ?? 0}
-                            prevShort={prev.prod_short ?? 0}
-                            percentile={Math.round(getPercentile(pNet, allProd))}
-                          />
-                          <ParticipantRow
-                            name="Managed Money (CTAs & Speculators)"
-                            color="#10b981"
-                            role="Systematic trend-following funds and speculative CTA algorithms."
-                            long={latest.mm_long ?? 0}
-                            short={latest.mm_short ?? 0}
-                            prevLong={prev.mm_long ?? 0}
-                            prevShort={prev.mm_short ?? 0}
-                            percentile={Math.round(getPercentile(mNet, allMm))}
-                          />
-                          <ParticipantRow
-                            name="Other Reportables"
-                            color="#94a3b8"
-                            role="Secondary non-speculative hedgers and commercial end-users."
-                            long={latest.other_long ?? 0}
-                            short={latest.other_short ?? 0}
-                            prevLong={prev.other_long ?? 0}
-                            prevShort={prev.other_short ?? 0}
-                            percentile={Math.round(getPercentile(oNet, allOther))}
-                          />
-                        </div>
-                      );
-                    }
-                  })()}
-                </div>
-
-                {/* 5. SECTION: COMPARATIVE AUDIT TABLE */}
+                {/* 4. SECTION: COMPARATIVE AUDIT TABLE */}
                 <div>
                   <div className="mb-3">
                     <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      <span>📊</span> Period Start vs. Period End Audit Table
+                      Period Start vs. Period End Audit Table
                     </h3>
                   </div>
 
                   <ComparisonTable
+                    key={`${currentInstrument.id}-${filteredHistory[0]?.date}-${filteredHistory[filteredHistory.length - 1]?.date}`}
                     instrument={currentInstrument}
                     summary={generateCOTSummary(currentInstrument.id)}
                     initialDate1={filteredHistory[0]?.date}
@@ -575,10 +471,7 @@ export default function HomePage() {
         {activeTab === 'heatmap' && <CrossMarketHeatmap />}
       </main>
 
-      {/* 4. Educational Sidebar Drawer */}
-      <EducationalSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* 5. Footer */}
+      {/* Footer */}
       <footer className="border-t border-[#1e2d3d] bg-[#070b14] py-4 px-6 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-[#64748b]">
           <div className="flex items-center gap-2">
@@ -588,8 +481,6 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-[#10b981]">Official CFTC Historical Filings (2018 – 2026)</span>
-            <span className="text-[#475569]">·</span>
-            <span>Built by a Trader. For Traders.</span>
           </div>
         </div>
       </footer>
