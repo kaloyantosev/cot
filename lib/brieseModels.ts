@@ -143,10 +143,10 @@ export function analyzeBrieseCOT(instrument: Instrument, customHistory?: WeeklyD
 
   if (movementIndex6W >= 40 || movementIndex4W >= 40) {
     surgeSignal = 'BULLISH_40_SURGE';
-    surgeDetails = +40 Commercial Buying Surge: Commercials expanded their COT Index by + points within 6 weeks. Per Briese Chapter 7, aggressive insider accumulation marks the end of pullbacks and signals uptrend resumption.;
+    surgeDetails = `+40 Commercial Buying Surge: Commercials expanded their COT Index by +${movementIndex6W} points within 6 weeks. Per Briese Chapter 7, aggressive insider accumulation marks the end of pullbacks and signals uptrend resumption.`;
   } else if (movementIndex6W <= -40 || movementIndex4W <= -40) {
     surgeSignal = 'BEARISH_40_SURGE';
-    surgeDetails = -40 Commercial Selling Surge: Commercials dumped exposure by  points within 6 weeks. Per Briese Chapter 7, aggressive producer hedging marks the end of bear market rallies and signals resumption of downtrend.;
+    surgeDetails = `-40 Commercial Selling Surge: Commercials dumped exposure by ${movementIndex6W} points within 6 weeks. Per Briese Chapter 7, aggressive producer hedging marks the end of bear market rallies and signals resumption of downtrend.`;
   }
 
   // 4. Large Speculator Dynamics & Divergence
