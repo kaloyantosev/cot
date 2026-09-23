@@ -96,6 +96,45 @@ export default function Screener({ onSelect }: ScreenerProps) {
     return sortDir === 'asc' ? '↑' : '↓';
   };
 
+  const exportToCSV = () => {
+    const headers = [
+      'Contract',
+      'Ticker',
+      'Exchange',
+      'Category',
+      'Briese_3Y_Index',
+      'Movement_6W',
+      'Commercial_Bias',
+      'Spec_Net',
+      'WoW_Change',
+      'Spec_Percentile',
+      'Dealer_Bias'
+    ];
+
+    const rows = filtered.map((item) => [
+      `"${item.contractName.replace(/"/g, '""')}"`,
+      `"${item.ticker}"`,
+      `"${item.exchange}"`,
+      `"${item.category}"`,
+      item.briese?.cotIndex3Y ?? '',
+      item.briese?.movementIndex6W ?? '',
+      `"${item.briese?.commercialBias ?? ''}"`,
+      item.mmNet,
+      item.mmNetChange,
+      item.mmPercentile,
+      `"${item.dealerBias}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `COT_Institutional_Screener_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col gap-5 w-full max-w-7xl mx-auto">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -108,22 +147,33 @@ export default function Screener({ onSelect }: ScreenerProps) {
           </p>
         </div>
 
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Filter by ticker or name…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-[#0a0e19] border border-[#1e2d3d] rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder:text-[#475569] outline-none focus:border-[#6366f1] w-56"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#64748b] hover:text-white font-mono"
-            >
-              X
-            </button>
-          )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#1e2d3d] bg-[#0d1117] hover:bg-[#1e2d3d]/50 text-xs font-mono font-semibold text-[#818cf8] hover:text-white transition-all shadow-sm"
+            title="Export filtered records to CSV"
+          >
+            <span>↓</span>
+            <span>Export CSV ({filtered.length})</span>
+          </button>
+
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Filter by ticker or name…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-[#0a0e19] border border-[#1e2d3d] rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder:text-[#475569] outline-none focus:border-[#6366f1] w-56"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#64748b] hover:text-white font-mono"
+              >
+                X
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

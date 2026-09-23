@@ -102,16 +102,11 @@ export default function CommandBar({
 
         {/* LEFT: Logo */}
         <div className="flex items-center gap-3 shrink-0">
-          <span className="relative flex h-2.5 w-2.5">
-            <span
-              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-              style={{ backgroundColor: '#10b981' }}
-            />
-            <span
-              className="relative inline-flex rounded-full h-2.5 w-2.5"
-              style={{ backgroundColor: '#10b981' }}
-            />
-          </span>
+          <span
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: '#10b981' }}
+            title="CFTC Weekly Settled Data"
+          />
           <span
             className="font-bold text-white tracking-widest text-sm select-none"
             style={{

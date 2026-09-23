@@ -155,45 +155,30 @@ export default function HomePage() {
       <main className="flex-1 px-4 sm:px-6 lg:px-8 pt-32 pb-16 max-w-7xl mx-auto w-full">
         {activeTab === 'dashboard' && (
           <div className="flex flex-col gap-8">
-            {/* HERO SECTION (only when no contract is selected) */}
+            {/* CLEAN TERMINAL HEADER (when no contract is selected) */}
             {!selectedContract && (
-              <motion.div
-                initial={{ opacity: 0, y: -16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35 }}
-                className="flex flex-col items-center text-center pt-6 pb-8 border-b border-[#1e2d3d]/60"
-              >
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-[#6366f1]/10 border border-[#6366f1]/30 text-[#818cf8] mb-4">
-                  <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-                  INSTITUTIONAL COT POSITIONING TERMINAL
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1e2d3d]/60">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#10b981]" />
+                    <h1 className="text-xl sm:text-2xl font-bold font-mono text-white tracking-wide">
+                      CFTC COMMITMENTS OF TRADERS TERMINAL
+                    </h1>
+                  </div>
+                  <p className="text-xs text-[#94a3b8] font-mono">
+                    Direct commercial hedging intelligence, fund momentum, and Briese analyzing models.
+                  </p>
                 </div>
 
-                <h1 className="text-3xl sm:text-5xl font-extrabold font-mono tracking-tight leading-tight max-w-4xl bg-gradient-to-r from-white via-[#cbd5e1] to-[#818cf8] bg-clip-text text-transparent">
-                  COMMITMENT OF TRADERS
-                </h1>
-                <p className="text-sm sm:text-base text-[#94a3b8] font-mono italic mt-2 max-w-2xl">
-                  Real CFTC filings tracking commercial hedging, dealer inventory, and speculative positioning.
-                </p>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 w-full max-w-2xl">
-                  <div className="p-3 rounded-lg bg-[#0d1117] border border-[#1e2d3d] flex flex-col items-center">
-                    <span className="font-mono text-xl font-bold text-[#6366f1]">28</span>
-                    <span className="text-[10px] font-mono text-[#64748b] uppercase">Liquid Contracts</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#0d1117] border border-[#1e2d3d] flex flex-col items-center">
-                    <span className="font-mono text-xl font-bold text-[#10b981]">5</span>
-                    <span className="text-[10px] font-mono text-[#64748b] uppercase">Asset Classes</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#0d1117] border border-[#1e2d3d] flex flex-col items-center">
-                    <span className="font-mono text-xl font-bold text-[#f59e0b]">8+ Years</span>
-                    <span className="text-[10px] font-mono text-[#64748b] uppercase">Historical Archive</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#0d1117] border border-[#1e2d3d] flex flex-col items-center">
-                    <span className="font-mono text-xl font-bold text-[#8b5cf6]">445+ Wks</span>
-                    <span className="text-[10px] font-mono text-[#64748b] uppercase">Weekly Reports</span>
-                  </div>
+                <div className="flex items-center gap-2 font-mono text-xs text-[#64748b]">
+                  <span className="px-2.5 py-1 rounded bg-[#0d1117] border border-[#1e2d3d]">
+                    28 Liquid Futures
+                  </span>
+                  <span className="px-2.5 py-1 rounded bg-[#0d1117] border border-[#1e2d3d]">
+                    2018 – Present
+                  </span>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* ASSET GRID (when no contract is selected) */}
@@ -336,29 +321,29 @@ export default function HomePage() {
                 {/* 3. SECTION: STEPHEN BRIESE COT MODEL & CME COMMERCIAL ANALYTICS */}
                 <BrieseAnalysisPanel
                   instrument={currentInstrument}
-                  filteredHistory={filteredHistory}
+                  filteredHistory={currentInstrument.history}
                 />
 
                 {/* 4. SECTION: INSTITUTIONAL PERCENTILE GAUGES */}
                 <div>
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      Statistical Percentile Distribution ({filteredHistory.length} Reports)
+                      Statistical Percentile Distribution (Full History Baseline: {currentInstrument.history.length} Reports)
                     </h3>
                     <span className="text-[11px] font-mono text-[#64748b]">
-                      Ranked over {formatDate(filteredHistory[0]?.date)} — {formatDate(filteredHistory[filteredHistory.length - 1]?.date)}
+                      Standard 3-Year & Multi-Year CFTC Range
                     </span>
                   </div>
 
                   {currentInstrument.isFinancial ? (
                     (() => {
-                      const allDealer = filteredHistory.map(
+                      const allDealer = currentInstrument.history.map(
                         (h) => (h.dealer_long ?? 0) - (h.dealer_short ?? 0)
                       );
-                      const allAsset = filteredHistory.map(
+                      const allAsset = currentInstrument.history.map(
                         (h) => (h.asset_long ?? 0) - (h.asset_short ?? 0)
                       );
-                      const allLev = filteredHistory.map(
+                      const allLev = currentInstrument.history.map(
                         (h) => (h.lev_long ?? 0) - (h.lev_short ?? 0)
                       );
 
@@ -395,13 +380,13 @@ export default function HomePage() {
                     })()
                   ) : (
                     (() => {
-                      const allProd = filteredHistory.map(
+                      const allProd = currentInstrument.history.map(
                         (h) => (h.prod_long ?? 0) - (h.prod_short ?? 0)
                       );
-                      const allMm = filteredHistory.map(
+                      const allMm = currentInstrument.history.map(
                         (h) => (h.mm_long ?? 0) - (h.mm_short ?? 0)
                       );
-                      const allOther = filteredHistory.map(
+                      const allOther = currentInstrument.history.map(
                         (h) => (h.other_long ?? 0) - (h.other_short ?? 0)
                       );
 

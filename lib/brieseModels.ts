@@ -361,7 +361,7 @@ export function computeSectorComposites(instruments: Instrument[]): Record<strin
     if (score >= 60) return 'BULLISH ACCUMULATION';
     if (score <= 20) return 'SELLING CLIMAX';
     if (score <= 40) return 'BEARISH DISTRIBUTION';
-    return 'CYCLICAL BALANCE';
+    return score >= 50 ? 'COMMERCIAL LONG TILT' : 'COMMERCIAL SHORT TILT';
   };
 
   return {

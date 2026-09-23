@@ -134,32 +134,7 @@ export default function ComparisonTable({
       short2: d2.dealer_short ?? 0,
     });
   } else {
-    // Managed Money first, Producers second
-    rows.push({
-      category: 'Managed Money',
-      catColor: '#10b981',
-      pos: 'Long',
-      val1: d1.mm_long ?? 0,
-      val2: d2.mm_long ?? 0,
-      isFirst: true,
-      long1: d1.mm_long ?? 0,
-      short1: d1.mm_short ?? 0,
-      long2: d2.mm_long ?? 0,
-      short2: d2.mm_short ?? 0,
-    });
-    rows.push({
-      category: 'Managed Money',
-      catColor: '#10b981',
-      pos: 'Short',
-      val1: d1.mm_short ?? 0,
-      val2: d2.mm_short ?? 0,
-      isFirst: false,
-      long1: d1.mm_long ?? 0,
-      short1: d1.mm_short ?? 0,
-      long2: d2.mm_long ?? 0,
-      short2: d2.mm_short ?? 0,
-    });
-
+    // Commercial Producers lead, Managed Money second
     rows.push({
       category: 'Producers',
       catColor: '#6366f1',
@@ -183,6 +158,31 @@ export default function ComparisonTable({
       short1: d1.prod_short ?? 0,
       long2: d2.prod_long ?? 0,
       short2: d2.prod_short ?? 0,
+    });
+
+    rows.push({
+      category: 'Managed Money',
+      catColor: '#10b981',
+      pos: 'Long',
+      val1: d1.mm_long ?? 0,
+      val2: d2.mm_long ?? 0,
+      isFirst: true,
+      long1: d1.mm_long ?? 0,
+      short1: d1.mm_short ?? 0,
+      long2: d2.mm_long ?? 0,
+      short2: d2.mm_short ?? 0,
+    });
+    rows.push({
+      category: 'Managed Money',
+      catColor: '#10b981',
+      pos: 'Short',
+      val1: d1.mm_short ?? 0,
+      val2: d2.mm_short ?? 0,
+      isFirst: false,
+      long1: d1.mm_long ?? 0,
+      short1: d1.mm_short ?? 0,
+      long2: d2.mm_long ?? 0,
+      short2: d2.mm_short ?? 0,
     });
   }
 
