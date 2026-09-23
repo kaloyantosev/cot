@@ -56,12 +56,11 @@ export default function SignalBadge({ signal }: SignalBadgeProps) {
 
   return (
     <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold font-mono whitespace-nowrap"
+      className="inline-flex items-center justify-center rounded px-2 py-0.5 text-[10px] font-bold font-mono tracking-wide whitespace-nowrap leading-none"
       style={{
         backgroundColor: config.bg,
         color: config.text,
         border: `1px solid ${config.border}`,
-        letterSpacing: '0.04em',
       }}
     >
       {config.label}

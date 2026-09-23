@@ -100,6 +100,14 @@ export default function CrossMarketHeatmap({ onSelectContract, activeCategory = 
     .sort((a, b) => b.distance - a.distance)
     .slice(0, 6);
 
+  // Helper to calculate proportional width percentage based on percentage value:
+  // Maps 0-100% to a visual width between 40% (for low percentages) and 100% (for 100%)
+  const getProportionalWidth = (pct: number): string => {
+    const clamped = Math.max(0, Math.min(100, pct));
+    const widthPct = Math.round(40 + (clamped / 100) * 60);
+    return `${widthPct}%`;
+  };
+
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
       <div className="p-5 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md overflow-x-auto">
@@ -112,14 +120,14 @@ export default function CrossMarketHeatmap({ onSelectContract, activeCategory = 
           </p>
         </div>
 
-        <table className="w-full text-left font-mono border-collapse min-w-[700px]">
+        <table className="w-full text-left font-mono border-collapse min-w-[750px]">
           <thead>
             <tr className="border-b border-[#1e2d3d] text-xs uppercase text-[#64748b]">
-              <th className="p-3 w-1/4">Asset Class</th>
-              <th className="p-3 text-center">Commercial Insiders (Producers/Asset Mgrs)</th>
-              <th className="p-3 text-center">Large Speculators (Managed Money/Lev Funds)</th>
-              <th className="p-3 text-center">Briese 3Y Composite Index</th>
-              <th className="p-3 text-center text-[#475569]">Dealers (Contra Inventory)</th>
+              <th className="p-3 w-1/5">Asset Class</th>
+              <th className="p-3 w-1/5 text-center">Commercial Insiders (Producers/Asset Mgrs)</th>
+              <th className="p-3 w-1/5 text-center">Large Speculators (Managed Money/Lev Funds)</th>
+              <th className="p-3 w-1/5 text-center">Briese 3Y Composite Index</th>
+              <th className="p-3 w-1/5 text-center text-[#475569]">Dealers (Contra Inventory)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1e2d3d]/50">
@@ -135,59 +143,87 @@ export default function CrossMarketHeatmap({ onSelectContract, activeCategory = 
 
                   {/* Commercial Insiders */}
                   <td className="p-2 text-center">
-                    <div
-                      className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-transform hover:scale-105"
-                      style={{ background: commStyle.bg, borderColor: commStyle.border, color: commStyle.text }}
-                    >
-                      <span className="font-bold text-sm">{row.commercialPercentile}%</span>
-                      <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
-                        {row.commercialPercentile >= 50 ? 'ACCUMULATION' : 'SHORT HEDGING'}
-                      </span>
+                    <div className="flex justify-center w-full">
+                      <div
+                        className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-all duration-300"
+                        style={{
+                          width: getProportionalWidth(row.commercialPercentile),
+                          background: commStyle.bg,
+                          borderColor: commStyle.border,
+                          color: commStyle.text,
+                        }}
+                      >
+                        <span className="font-bold text-sm">{row.commercialPercentile}%</span>
+                        <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold whitespace-nowrap">
+                          {row.commercialPercentile >= 50 ? 'ACCUMULATION' : 'SHORT HEDGING'}
+                        </span>
+                      </div>
                     </div>
                   </td>
 
                   {/* Large Speculators */}
                   <td className="p-2 text-center">
-                    <div
-                      className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-transform hover:scale-105"
-                      style={{ background: specStyle.bg, borderColor: specStyle.border, color: specStyle.text }}
-                    >
-                      <span className="font-bold text-sm">{row.specPercentile}%</span>
-                      <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
-                        {row.specPercentile >= 50 ? 'NET LONG' : 'NET SHORT'}
-                      </span>
+                    <div className="flex justify-center w-full">
+                      <div
+                        className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-all duration-300"
+                        style={{
+                          width: getProportionalWidth(row.specPercentile),
+                          background: specStyle.bg,
+                          borderColor: specStyle.border,
+                          color: specStyle.text,
+                        }}
+                      >
+                        <span className="font-bold text-sm">{row.specPercentile}%</span>
+                        <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold whitespace-nowrap">
+                          {row.specPercentile >= 50 ? 'NET LONG' : 'NET SHORT'}
+                        </span>
+                      </div>
                     </div>
                   </td>
 
                   {/* Briese 3Y Composite Index */}
                   <td className="p-2 text-center">
-                    <div
-                      className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-transform hover:scale-105"
-                      style={{ background: brieseStyle.bg, borderColor: brieseStyle.border, color: brieseStyle.text }}
-                    >
-                      <span className="font-bold text-sm">{row.brieseComposite}%</span>
-                      <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
-                        {row.brieseComposite >= 80
-                          ? 'BUYING CLIMAX'
-                          : row.brieseComposite <= 20
-                          ? 'SELLING CLIMAX'
-                          : row.brieseComposite >= 50
-                          ? 'BULLISH BIAS'
-                          : 'BEARISH BIAS'}
-                      </span>
+                    <div className="flex justify-center w-full">
+                      <div
+                        className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-all duration-300"
+                        style={{
+                          width: getProportionalWidth(row.brieseComposite),
+                          background: brieseStyle.bg,
+                          borderColor: brieseStyle.border,
+                          color: brieseStyle.text,
+                        }}
+                      >
+                        <span className="font-bold text-sm">{row.brieseComposite}%</span>
+                        <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold whitespace-nowrap">
+                          {row.brieseComposite >= 80
+                            ? 'BUYING CLIMAX'
+                            : row.brieseComposite <= 20
+                            ? 'SELLING CLIMAX'
+                            : row.brieseComposite >= 50
+                            ? 'BULLISH BIAS'
+                            : 'BEARISH BIAS'}
+                        </span>
+                      </div>
                     </div>
                   </td>
 
                   {/* Dealers (Contra Inventory - at bottom/end) */}
                   <td className="p-2 text-center">
-                    <div
-                      className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center"
-                      style={{ background: dealerStyle.bg, borderColor: dealerStyle.border, color: dealerStyle.text }}
-                    >
-                      <span className="font-bold text-sm">{row.dealerPercentile}%</span>
-                      <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold">
-                        {row.dealerPercentile >= 50 ? 'INVENTORY LONG' : 'SHORT HEDGING'}
-                      </span>
+                    <div className="flex justify-center w-full">
+                      <div
+                        className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center transition-all duration-300"
+                        style={{
+                          width: getProportionalWidth(row.dealerPercentile),
+                          background: dealerStyle.bg,
+                          borderColor: dealerStyle.border,
+                          color: dealerStyle.text,
+                        }}
+                      >
+                        <span className="font-bold text-sm">{row.dealerPercentile}%</span>
+                        <span className="text-[9px] uppercase tracking-wider opacity-90 font-bold whitespace-nowrap">
+                          {row.dealerPercentile >= 50 ? 'INVENTORY LONG' : 'SHORT HEDGING'}
+                        </span>
+                      </div>
                     </div>
                   </td>
                 </tr>

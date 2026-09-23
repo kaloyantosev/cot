@@ -143,17 +143,19 @@ export default function InstrumentCard({ instrument, onClick, index = 0 }: Instr
       </div>
 
       {/* ROW 4: Signal badge + weekly change */}
-      <div className="flex items-start justify-between gap-2">
-        <SignalBadge signal={signal} />
-        <div className="flex flex-col items-end gap-0.5">
+      <div className="flex items-center justify-between gap-3 pt-1 border-t border-[#1e2d3d]/40">
+        <div className="shrink-0">
+          <SignalBadge signal={signal} />
+        </div>
+        <div className="flex flex-col items-end min-w-0">
           <span
-            className="text-sm font-bold font-mono"
+            className="text-xs sm:text-sm font-bold font-mono tracking-tight"
             style={{ color: changePositive ? '#10b981' : '#ef4444' }}
           >
             {changeFormatted}
           </span>
-          <span className="text-[10px] text-[#475569] font-mono whitespace-nowrap">
-            WoW change in net contracts
+          <span className="text-[9px] text-[#64748b] font-mono tracking-tight uppercase whitespace-nowrap">
+            WoW Net Shift
           </span>
         </div>
       </div>
