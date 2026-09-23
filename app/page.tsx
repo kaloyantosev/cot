@@ -142,16 +142,16 @@ export default function HomePage() {
 
               {/* Futures Contracts Grid */}
               <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                    {activeCategory === 'all'
-                      ? 'Tracked Futures Contracts (28 Markets)'
-                      : `Tracked ${activeCategory.toUpperCase()} Futures`}
-                  </h3>
-                  <span className="text-xs font-mono text-[#64748b]">
-                    Click any contract to load complete unified analysis
-                  </span>
-                </div>
+                {activeCategory !== 'all' && (
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                      {activeCategory.toUpperCase()} Futures
+                    </h3>
+                    <span className="text-xs font-mono text-[#64748b]">
+                      Click any contract to load complete unified analysis
+                    </span>
+                  </div>
+                )}
                 <AssetGrid
                   category={activeCategory}
                   instruments={instruments}
