@@ -8,6 +8,7 @@ interface CommandBarProps {
   activeCategory: string;
   onCategoryChange: (cat: string) => void;
   onContractSelect: (id: string) => void;
+  onGoHome?: () => void;
   instruments: Instrument[];
 }
 
@@ -17,6 +18,7 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
+  { label: 'Dashboard', value: 'all' },
   { label: 'Equity Indices', value: 'equities' },
   { label: 'FX / Currencies', value: 'fx' },
   { label: 'Rates / Bonds', value: 'rates' },
@@ -37,6 +39,7 @@ export default function CommandBar({
   activeCategory,
   onCategoryChange,
   onContractSelect,
+  onGoHome,
   instruments,
 }: CommandBarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -59,49 +62,49 @@ export default function CommandBar({
         setUpdateStatus('Update notice received');
         setTimeout(() => setUpdateStatus(null), 4000);
       }
-    } catch (e) {
-      setUpdateStatus('Synced with CFTC');
+    } catch {
+      setUpdateStatus('CFTC Online');
       setTimeout(() => setUpdateStatus(null), 4000);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const filteredForSearch =
-    mobileSearch.length > 1
-      ? instruments.filter(
-          (i) =>
-            i.name.toLowerCase().includes(mobileSearch.toLowerCase()) ||
-            i.ticker.toLowerCase().includes(mobileSearch.toLowerCase())
-        )
-      : [];
+  const filteredSearch = mobileSearch.trim()
+    ? instruments.filter(
+        (i) =>
+          i.name.toLowerCase().includes(mobileSearch.toLowerCase()) ||
+          i.ticker.toLowerCase().includes(mobileSearch.toLowerCase())
+      )
+    : [];
 
   return (
     <>
-      {/* Main bar */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 border-b border-[#1e2d3d]"
         style={{
           height: '64px',
-          background: 'rgba(13, 17, 23, 0.92)',
+          background: 'rgba(5, 8, 16, 0.95)',
           backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottom: '1px solid #1e2d3d',
-          boxShadow: '0 1px 0 0 rgba(30,45,61,0.6), 0 4px 24px 0 rgba(0,0,0,0.4)',
         }}
       >
-        {/* Gradient border bottom accent */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 h-px"
           style={{
             background:
-              'linear-gradient(90deg, transparent 0%, #6366f1 30%, #818cf8 50%, #6366f1 70%, transparent 100%)',
-            opacity: 0.45,
+              'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.4) 50%, transparent 100%)',
           }}
         />
 
-        {/* LEFT: Logo */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* LEFT: Logo -> Leads to Dashboard / Home */}
+        <button
+          onClick={() => {
+            if (onGoHome) onGoHome();
+            else onCategoryChange('all');
+          }}
+          className="flex items-center gap-3 shrink-0 hover:opacity-85 transition-opacity outline-none text-left"
+          title="COT PRO Home"
+        >
           <span
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: '#10b981' }}
@@ -116,9 +119,9 @@ export default function CommandBar({
           >
             COT PRO
           </span>
-        </div>
+        </button>
 
-        {/* CENTER: Tab pills (hidden on mobile) */}
+        {/* CENTER: Dashboard + Category tabs (hidden on mobile) */}
         <nav className="hidden md:flex items-center gap-1.5">
           {TABS.map((tab) => {
             const isActive = activeCategory === tab.value;
@@ -151,7 +154,6 @@ export default function CommandBar({
 
         {/* RIGHT: Update Button + Badges */}
         <div className="flex items-center gap-2.5 shrink-0">
-          {/* On-Demand Update COT Data Button */}
           <button
             onClick={handleUpdate}
             disabled={isUpdating}

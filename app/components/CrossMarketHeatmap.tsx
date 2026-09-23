@@ -6,6 +6,11 @@ import { getPercentile, getSignalFromPercentile } from '@/lib/utils';
 import { analyzeBrieseCOT } from '@/lib/brieseModels';
 import SignalBadge from './SignalBadge';
 
+interface CrossMarketHeatmapProps {
+  onSelectContract?: (id: string) => void;
+  activeCategory?: string;
+}
+
 interface HeatmapCellData {
   category: string;
   catLabel: string;
@@ -32,8 +37,12 @@ function getCellColor(pct: number): { bg: string; text: string; border: string }
   return { bg: 'rgba(251, 146, 60, 0.12)', text: '#fdba74', border: 'rgba(251, 146, 60, 0.2)' };
 }
 
-export default function CrossMarketHeatmap() {
-  const heatmapData: HeatmapCellData[] = CATEGORIES.map((cat) => {
+export default function CrossMarketHeatmap({ onSelectContract, activeCategory = 'all' }: CrossMarketHeatmapProps) {
+  const filteredCategories = activeCategory === 'all'
+    ? CATEGORIES
+    : CATEGORIES.filter((c) => c.key === activeCategory);
+
+  const heatmapData: HeatmapCellData[] = filteredCategories.map((cat) => {
     const subset = instruments.filter((i) => i.category === cat.key);
 
     let commPcts: number[] = [];
@@ -42,32 +51,25 @@ export default function CrossMarketHeatmap() {
     let dealerPcts: number[] = [];
 
     subset.forEach((inst) => {
-      // Briese Analysis
       const briese = analyzeBrieseCOT(inst);
       brieseScores.push(briese.cotIndex3Y);
 
-      // Speculator Percentile
       const allNets = inst.history.map((h) => h.netLong);
       const specPct = getPercentile(inst.netPosition, allNets);
       specPcts.push(specPct);
 
       if (inst.isFinancial) {
-        // Asset Managers are Commercial/Institutional Smart Money in Financials
         const allAmNets = inst.history.map((h) => (h.asset_long ?? 0) - (h.asset_short ?? 0));
         const latestAm = (inst.history[inst.history.length - 1].asset_long ?? 0) - (inst.history[inst.history.length - 1].asset_short ?? 0);
         commPcts.push(getPercentile(latestAm, allAmNets));
 
-        // Dealers are intermediaries / contra-hedgers
         const allDealerNets = inst.history.map((h) => (h.dealer_long ?? 0) - (h.dealer_short ?? 0));
         const latestDealer = (inst.history[inst.history.length - 1].dealer_long ?? 0) - (inst.history[inst.history.length - 1].dealer_short ?? 0);
         dealerPcts.push(getPercentile(latestDealer, allDealerNets));
       } else {
-        // Physical Producers are the primary Commercial Hedgers in Commodities
         const allProdNets = inst.history.map((h) => (h.prod_long ?? 0) - (h.prod_short ?? 0));
         const latestProd = (inst.history[inst.history.length - 1].prod_long ?? 0) - (inst.history[inst.history.length - 1].prod_short ?? 0);
         commPcts.push(getPercentile(latestProd, allProdNets));
-
-        // No dealers in physical commodities; neutral benchmark
         dealerPcts.push(50);
       }
     });
@@ -84,44 +86,39 @@ export default function CrossMarketHeatmap() {
     };
   });
 
-  const crowdedList = instruments
+  const crowdedBase = activeCategory === 'all'
+    ? instruments
+    : instruments.filter((i) => i.category === activeCategory);
+
+  const crowdedList = crowdedBase
     .map((inst) => {
       const allNets = inst.history.map((h) => h.netLong);
       const pct = Math.round(getPercentile(inst.netPosition, allNets));
       const distance = Math.abs(pct - 50);
-      return {
-        inst,
-        pct,
-        distance,
-        isLongExtreme: pct >= 50,
-      };
+      return { inst, pct, distance, isLongExtreme: pct >= 50 };
     })
     .sort((a, b) => b.distance - a.distance)
     .slice(0, 6);
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-bold text-white font-mono flex items-center gap-2">
-          Cross-Market Institutional Heatmap &amp; Briese Composite
-        </h2>
-        <p className="text-xs text-[#64748b]">
-          Cross-sector capital positioning: Commercial Insiders (Producers/Asset Managers), Speculative Funds, and Stephen Briese Composite Indexes.
-        </p>
-      </div>
-
+    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
       <div className="p-5 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md overflow-x-auto">
+        <div className="flex flex-col gap-1 mb-4">
+          <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+            Cross-Market Capital Positioning Heatmap
+          </h3>
+          <p className="text-xs text-[#64748b] font-mono">
+            Commercial insiders (smart money) vs. speculative trend followers and Briese multi-contract composite index.
+          </p>
+        </div>
+
         <table className="w-full text-left font-mono border-collapse min-w-[700px]">
           <thead>
             <tr className="border-b border-[#1e2d3d] text-xs uppercase text-[#64748b]">
               <th className="p-3 w-1/4">Asset Class</th>
-              {/* Primary Insiders first */}
               <th className="p-3 text-center">Commercial Insiders (Producers/Asset Mgrs)</th>
-              {/* Speculative crowd second */}
               <th className="p-3 text-center">Large Speculators (Managed Money/Lev Funds)</th>
-              {/* Briese Model Composite third */}
               <th className="p-3 text-center">Briese 3Y Composite Index</th>
-              {/* Dealers placed at the bottom/end */}
               <th className="p-3 text-center text-[#475569]">Dealers (Contra Inventory)</th>
             </tr>
           </thead>
@@ -181,7 +178,7 @@ export default function CrossMarketHeatmap() {
                     </div>
                   </td>
 
-                  {/* Dealers (Contra Inventory - at the bottom/end) */}
+                  {/* Dealers (Contra Inventory - at bottom/end) */}
                   <td className="p-2 text-center">
                     <div
                       className="py-2.5 px-3 rounded-lg border flex flex-col items-center justify-center"
@@ -200,56 +197,62 @@ export default function CrossMarketHeatmap() {
         </table>
       </div>
 
-      <div className="p-5 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      {/* Top Crowded Trades */}
+      {crowdedList.length > 0 && (
+        <div className="p-5 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md flex flex-col gap-4">
+          <div className="flex items-center justify-between">
             <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider">
-              Top 6 Crowded Institutional Trades (By Statistical Distance)
+              Top Crowded Institutional Trades (Statistical Distance)
             </h3>
+            <span className="text-[11px] font-mono text-[#64748b]">Click any card to inspect contract</span>
           </div>
-          <span className="text-[11px] font-mono text-[#64748b]">CFTC Historical Percentile</span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {crowdedList.map((item, idx) => {
-            const signal = getSignalFromPercentile(item.pct);
-            const isLong = item.isLongExtreme;
-            return (
-              <motion.div
-                key={item.inst.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="p-3.5 rounded-lg border flex flex-col gap-2 transition-colors"
-                style={{
-                  background: isLong ? 'rgba(16, 185, 129, 0.06)' : 'rgba(239, 68, 68, 0.06)',
-                  borderColor: isLong ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)',
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#64748b]">#{idx + 1}</span>
-                    <span className="text-xs font-mono font-bold text-white">{item.inst.name}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {crowdedList.map((item, idx) => {
+              const signal = getSignalFromPercentile(item.pct);
+              const isLong = item.isLongExtreme;
+              return (
+                <motion.div
+                  key={item.inst.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  onClick={() => onSelectContract && onSelectContract(item.inst.id)}
+                  className={`p-3.5 rounded-lg border flex flex-col gap-2 transition-all ${
+                    onSelectContract ? 'cursor-pointer hover:border-[#6366f1]' : ''
+                  }`}
+                  style={{
+                    background: isLong ? 'rgba(16, 185, 129, 0.06)' : 'rgba(239, 68, 68, 0.06)',
+                    borderColor: isLong ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)',
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-[#64748b]">#{idx + 1}</span>
+                      <span className="text-xs font-mono font-bold text-white truncate max-w-[140px]" title={item.inst.name}>
+                        {item.inst.name}
+                      </span>
+                    </div>
+                    <span className="font-mono text-[10px] text-[#818cf8] bg-[#6366f1]/10 px-1.5 py-0.5 rounded border border-[#6366f1]/20">
+                      {item.inst.ticker}
+                    </span>
                   </div>
-                  <span className="font-mono text-[10px] text-[#818cf8] bg-[#6366f1]/10 px-1.5 py-0.5 rounded border border-[#6366f1]/20">
-                    {item.inst.ticker}
-                  </span>
-                </div>
 
-                <div className="flex items-center justify-between pt-1 border-t border-[#1e2d3d]/50">
-                  <SignalBadge signal={signal} />
-                  <span
-                    className="font-mono text-xs font-extrabold"
-                    style={{ color: isLong ? '#10b981' : '#ef4444' }}
-                  >
-                    {item.pct}%
-                  </span>
-                </div>
-              </motion.div>
-            );
-          })}
+                  <div className="flex items-center justify-between pt-1 border-t border-[#1e2d3d]/50">
+                    <SignalBadge signal={signal} />
+                    <span
+                      className="font-mono text-xs font-extrabold"
+                      style={{ color: isLong ? '#10b981' : '#ef4444' }}
+                    >
+                      {item.pct}%
+                    </span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,9 @@ interface AssetGridProps {
 }
 
 export default function AssetGrid({ category, instruments, onSelect }: AssetGridProps) {
-  const filtered = instruments.filter((i) => i.category === category);
+  const filtered = category === 'all'
+    ? instruments
+    : instruments.filter((i) => i.category === category);
 
   if (filtered.length === 0) {
     return (

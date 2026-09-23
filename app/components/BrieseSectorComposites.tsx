@@ -6,30 +6,41 @@ import { computeSectorComposites } from '@/lib/brieseModels';
 
 interface BrieseSectorCompositesProps {
   instruments: Instrument[];
+  activeCategory?: string;
 }
 
-export default function BrieseSectorComposites({ instruments }: BrieseSectorCompositesProps) {
+export default function BrieseSectorComposites({ instruments, activeCategory = 'all' }: BrieseSectorCompositesProps) {
   const composites = useMemo(() => {
     return computeSectorComposites(instruments);
   }, [instruments]);
 
-  const sectors = [
-    { key: 'petroleum', name: 'Petroleum Complex', desc: 'Crude Oil · Heating Oil · Gasoline' },
-    { key: 'metals', name: 'Metals Complex', desc: 'Gold · Silver · Copper · Platinum' },
-    { key: 'grains', name: 'Grain & Oilseed Complex', desc: 'Corn · Wheat · Soybeans' },
-    { key: 'equities', name: 'Equity Index Complex', desc: 'S&P 500 · Nasdaq · Russell · Dow' },
-    { key: 'fx', name: 'Foreign Exchange Complex', desc: 'EUR · GBP · JPY · AUD · DXY' },
+  const allSectors = [
+    { key: 'equities', name: 'Equity Index Complex', category: 'equities', desc: 'S&P 500 · Nasdaq · Russell · Dow' },
+    { key: 'fx', name: 'Foreign Exchange Complex', category: 'fx', desc: 'EUR · GBP · JPY · AUD · DXY' },
+    { key: 'metals', name: 'Metals Complex', category: 'metals', desc: 'Gold · Silver · Copper · Platinum' },
+    { key: 'grains', name: 'Grain & Oilseed Complex', category: 'metals', desc: 'Corn · Wheat · Soybeans' },
+    { key: 'petroleum', name: 'Petroleum Complex', category: 'energy', desc: 'Crude Oil · Heating Oil · Gasoline' },
   ];
+
+  // Filter composites based on activeCategory
+  const displayedSectors = useMemo(() => {
+    if (activeCategory === 'all') return allSectors;
+    return allSectors.filter((sec) => sec.category === activeCategory);
+  }, [activeCategory]);
+
+  if (displayedSectors.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-3 p-5 rounded-xl border border-[#1e2d3d] bg-[#0d1117]/80 backdrop-blur-md w-full">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#1e2d3d]/60">
         <div className="flex flex-col">
           <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-            Multi-Contract Sector Composite COT Models
+            {activeCategory === 'all'
+              ? 'Multi-Contract Sector Composite COT Models'
+              : `${activeCategory.toUpperCase()} Sector Composite COT Intelligence`}
           </span>
           <span className="text-[11px] font-mono text-[#64748b]">
-            Aggregated commercial insider accumulation across integrated market complexes (Briese Chapter 15 & 19)
+            Aggregated commercial insider accumulation across integrated market complexes (Briese Chapter 15 &amp; 19)
           </span>
         </div>
         <span className="text-[10px] font-mono text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20">
@@ -37,8 +48,14 @@ export default function BrieseSectorComposites({ instruments }: BrieseSectorComp
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 pt-1">
-        {sectors.map((sec) => {
+      <div className={`grid gap-3 pt-1 ${
+        displayedSectors.length === 1
+          ? 'grid-cols-1 md:grid-cols-2'
+          : displayedSectors.length === 2
+          ? 'grid-cols-1 sm:grid-cols-2'
+          : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
+      }`}>
+        {displayedSectors.map((sec) => {
           const comp = composites[sec.key];
           if (!comp) return null;
           const score = comp.compositeIndex;
