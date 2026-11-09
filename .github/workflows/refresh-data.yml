@@ -1,0 +1,33 @@
+name: Refresh COT data
+
+# The CFTC publishes on Friday at 15:30 ET (Tuesday positions). Run Saturday
+# morning UTC, plus a Monday retry for holiday-delayed releases.
+on:
+  schedule:
+    - cron: '0 6 * * 6'
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/fetch-cot.mjs
+      - name: Commit if changed
+        run: |
+          if git diff --quiet data/cot.json; then
+            echo "No new report."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add data/cot.json
+          git commit -m "data: CFTC report $(node -p "require('./data/cot.json').asOf")"
+          git push

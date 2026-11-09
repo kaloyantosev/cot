@@ -1,101 +1,27 @@
-# ⚡ COT Pro — Institutional Intelligence Platform
+# COT Positioning
 
-An institutional-grade **Commitment of Traders (COT)** analytics and positioning intelligence terminal built for macro portfolio managers, systematic CTAs, and discretionary derivatives traders.
+A simple, accurate dashboard of CFTC Commitments of Traders positioning for 28 liquid futures: equity indices, Treasuries, currencies, energy, metals, grains and softs.
 
----
+**Live:** https://cot-visualiser.vercel.app
 
-## 🌐 Overview
+## What it shows
 
-**COT Pro** translates weekly CFTC Commitment of Traders filings (Legacy and Disaggregated formats) into actionable statistical and structural positioning intelligence across **30+ liquid global futures markets**.
+- **Overview:** the speculative net position for every market (Leveraged Funds in financials, Managed Money in commodities) as a % of open interest, with its 3-year COT Index, 26-week index, 3-year z-score and a crowded long / crowded short / neutral flag.
+- **Market pages:** the history of every trader group's net % of open interest, the rolling 3-year COT Index for speculators and hedgers, the latest positions table, and caveats where COT data is easy to misread (the Treasury basis trade, DX vs other FX, equity index hedges).
+- **Methodology:** definitions, timing (positions as of Tuesday, released Friday), and the limits of the signals.
 
-Instead of viewing static tables, traders can analyze institutional crowding, commercial hedging pressure, zero-line crossovers, and dealer delta-hedging flows across **3 years (156 weeks)** of data.
+## Data
 
----
+`data/cot.json` is built by `scripts/fetch-cot.mjs` from the [CFTC Public Reporting API](https://publicreporting.cftc.gov) (futures-only TFF and Disaggregated reports, since 2016). Markets are matched by CFTC contract code. A GitHub Action (`.github/workflows/refresh-data.yml`) runs every Saturday and Monday, and commits new data when a report is out. Vercel redeploys on that commit.
 
-## 🚀 Key Features
+## Develop
 
-### 1. 📊 Interactive Terminal Dashboard
-- **5 Global Asset Classes:** Equity Indices, FX / Currencies, Rates & Bonds, Energy Commodities, Metals & Ags.
-- **Micro Sparklines:** 26-week directional net position trajectories at a glance.
-- **Positioning Gauge:** Percentile rankings ($0\%$ to $100\%$) indicating statistical crowding relative to 3-year historical bands.
-- **Signal Badges:** Auto-classifies markets into `🔴 EXTREME SHORT`, `🟢 EXTREME LONG`, `⚡ CROSSOVER`, and `⚪ NEUTRAL`.
-
-### 2. 🔬 Institutional Deep Dive
-- **Participant Breakdown:**
-  - *Financials:* **Dealers / Intermediaries** (contra-indicator analysis), **Asset Managers / Institutional**, and **Leveraged Funds (CTAs / Speculators)**.
-  - *Commodities:* **Commercial Producers / Merchants**, **Managed Money**, and **Other Reportables**.
-  - Displays Longs, Shorts, Net Exposure, and L/S Ratios with week-over-week contract shifts.
-- **Positioning Timeline Chart:**
-  - Multi-line area charts tracking institutional net curves over `13W`, `26W`, `52W`, or `3Y`.
-  - **Interactive Price Overlay:** Correlates speculative positioning peaks with market tops, bottoms, and squeeze points.
-- **3Y Speedometer Gauges:**
-  - Dynamic SVG dials illustrating current net positioning against 3-year highs and lows.
-  - Generates algorithmic commentary on mean-reversion risk and squeeze vulnerability.
-- **Two-Date Comparison Matrix:**
-  - Compare any two historical reporting weeks to measure exact capital deployment and liquidation velocity.
-  - Includes an auto-generated narrative synthesis of net positioning bias.
-
-### 3. 🌐 Cross-Market Positioning Heatmap
-- **$5 \times 4$ Global Matrix:** Visualizes capital concentration across all participant categories and asset classes simultaneously.
-- **Top 6 Crowded Trades Leaderboard:** Ranked by absolute statistical distance from neutral.
-
-### 4. ⚡ Multi-Asset Signal Screener
-- Search and filter all 30+ markets by:
-  - `Extreme Long (>85th %ile)`
-  - `Extreme Short (<15th %ile)`
-  - `Zero-Line Crossovers`
-  - `Largest WoW Contract Changes`
-
-### 5. 📚 Educational Sidebar
-- Integrated institutional reference guide explaining CFTC reporting mechanics, commercial vs. speculative behavior, and why dealer hedging acts as an equity contra-indicator.
-
----
-
-## 🛠️ Tech Stack
-
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS (Dark Terminal Palette: `#050810`, `#6366f1`, `#10b981`, `#ef4444`)
-- **Charting:** Recharts & SVG Speedometer Visualizations
-- **Animations:** Framer Motion
-- **Deployment:** Vercel
-
----
-
-## 💻 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- npm, yarn, or pnpm
-
-### Installation
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/cot-pro.git
-
-# Navigate to the folder
-cd cot-pro
-
-# Install dependencies
 npm install
-
-# Start the local development server
+node scripts/fetch-cot.mjs   # optional: pull the latest report
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Next.js 14 (static generation), TypeScript, Tailwind, Recharts.
 
----
-
-## 🚢 Deployment to Vercel
-
-This repository is pre-configured with `vercel.json` for zero-configuration Next.js deployment:
-
-1. Push your repository to **GitHub**.
-2. Connect the repository in your [Vercel Dashboard](https://vercel.com).
-3. Click **Deploy**.
-
----
-
-## 📄 Disclaimer
-*Data provided in this demonstration repository uses realistic simulated historical CFTC formats for educational and portfolio demonstration purposes.*
+Not investment advice.
