@@ -1,4 +1,6 @@
+import { cache } from 'react';
 import raw from '@/data/cot.json';
+import { fetchReport, groupRows } from './cftc.mjs';
 import type { Signal } from './format';
 
 export * from './format';
@@ -30,12 +32,40 @@ interface Dataset {
   markets: Market[];
 }
 
-export const data = raw as unknown as Dataset;
-export const markets = data.markets;
+const bundled = raw as unknown as Dataset;
 export const SECTORS = ['Equities', 'Rates', 'FX', 'Energy', 'Metals', 'Grains', 'Softs'];
 
-export function getMarket(id: string): Market | undefined {
-  return markets.find((m) => m.id === id);
+/**
+ * Bundled history plus any reports the CFTC has published since the last
+ * commit of data/cot.json, fetched on every request so a refresh always shows
+ * the newest report (deduped per request by cache()). Falls back to the bundled data if the CFTC API is down.
+ */
+export const getData = cache(async (): Promise<Dataset> => {
+  try {
+    const init = { cache: 'no-store' as const, signal: AbortSignal.timeout(8000) };
+    // Re-fetch from the bundled latest date too, in case the CFTC revised it.
+    const [tff, disagg] = await Promise.all([
+      fetchReport('tff', bundled.asOf, init),
+      fetchReport('disagg', bundled.asOf, init),
+    ]);
+    const fresh = groupRows('disagg', disagg, groupRows('tff', tff));
+    const markets = bundled.markets.map((m) => {
+      const extra = fresh.get(m.code);
+      if (!extra) return m;
+      const byDate = new Map(m.rows.map((r) => [r.d, r]));
+      for (const [d, r] of extra) byDate.set(d, r as Row);
+      return { ...m, rows: Array.from(byDate.values()).sort((a, b) => a.d.localeCompare(b.d)) };
+    });
+    const asOf = markets.reduce((max, m) => (m.rows[m.rows.length - 1].d > max ? m.rows[m.rows.length - 1].d : max), '');
+    return { ...bundled, asOf, generatedAt: new Date().toISOString(), markets };
+  } catch (e) {
+    console.error('Live CFTC fetch failed, serving bundled data', e);
+    return bundled;
+  }
+});
+
+export async function getMarket(id: string): Promise<Market | undefined> {
+  return (await getData()).markets.find((m) => m.id === id);
 }
 
 // ─── Trader groups ───────────────────────────────────────────────────────────

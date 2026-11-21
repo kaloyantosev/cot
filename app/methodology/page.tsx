@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { data, fmtDate, releaseDate } from '@/lib/cot';
+import { getData, fmtDate, releaseDate } from '@/lib/cot';
 
 export const metadata: Metadata = { title: 'Methodology · COT Positioning' };
 
@@ -7,7 +7,8 @@ function H({ children }: { children: React.ReactNode }) {
   return <h2 className="pt-4 text-lg font-semibold">{children}</h2>;
 }
 
-export default function Methodology() {
+export default async function Methodology() {
+  const data = await getData();
   return (
     <article className="max-w-3xl space-y-4 text-[15px] leading-relaxed">
       <h1 className="text-2xl font-semibold tracking-tight">Methodology</h1>

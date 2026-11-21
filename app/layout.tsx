@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Inter, JetBrains_Mono } from 'next/font/google';
-import { data, fmtDate, releaseDate } from '@/lib/cot';
+import { getData, fmtDate, releaseDate } from '@/lib/cot';
 import './globals.css';
 
 const sans = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -13,7 +13,11 @@ export const metadata: Metadata = {
     'Weekly CFTC Commitments of Traders positioning for 28 liquid futures: net as % of open interest, 3-year COT index, z-scores and crowding extremes.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// Render on every request so each refresh reads the latest CFTC report.
+export const dynamic = 'force-dynamic';
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const data = await getData();
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body className="min-h-screen flex flex-col">

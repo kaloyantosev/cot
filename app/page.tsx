@@ -1,7 +1,8 @@
-import { markets, summarize, SECTORS } from '@/lib/cot';
+import { getData, summarize, SECTORS } from '@/lib/cot';
 import Overview, { type OverviewRow } from './Overview';
 
-export default function Home() {
+export default async function Home() {
+  const { markets } = await getData();
   const rows: OverviewRow[] = markets.map((m) => {
     const { market, ...s } = summarize(m);
     return { id: market.id, name: market.name, sector: market.sector, ...s };

@@ -12,7 +12,7 @@ A simple, accurate dashboard of CFTC Commitments of Traders positioning for 28 l
 
 ## Data
 
-`data/cot.json` is built by `scripts/fetch-cot.mjs` from the [CFTC Public Reporting API](https://publicreporting.cftc.gov) (futures-only TFF and Disaggregated reports, since 2016). Markets are matched by CFTC contract code. A GitHub Action (`.github/workflows/refresh-data.yml`) runs every Saturday and Monday, and commits new data when a report is out. Vercel redeploys on that commit.
+`data/cot.json` is built by `scripts/fetch-cot.mjs` from the [CFTC Public Reporting API](https://publicreporting.cftc.gov) (futures-only TFF and Disaggregated reports, since 2016). Markets are matched by CFTC contract code. A GitHub Action (`.github/workflows/refresh-data.yml`) runs every Saturday and Monday, and commits new data when a report is out. On top of that, every page request fetches any newer reports from the CFTC API (`lib/cot.ts`, `cache: 'no-store'`), so a refresh always shows the latest report even before the Action runs; if the API is down the bundled data is served.
 
 ## Develop
 
@@ -22,6 +22,6 @@ node scripts/fetch-cot.mjs   # optional: pull the latest report
 npm run dev
 ```
 
-Next.js 14 (static generation), TypeScript, Tailwind, Recharts.
+Next.js 14 (server-rendered per request), TypeScript, Tailwind, Recharts.
 
 Not investment advice.

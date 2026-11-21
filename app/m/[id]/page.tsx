@@ -11,7 +11,6 @@ import {
   getMarket,
   hedgerGroup,
   longShort,
-  markets,
   net,
   netPctOI,
   rollingIndex,
@@ -23,12 +22,8 @@ import IndexBar from '../../IndexBar';
 import { SignalTag } from '../../Overview';
 import Charts, { type ChartPoint } from './Charts';
 
-export function generateStaticParams() {
-  return markets.map((m) => ({ id: m.id }));
-}
-
-export function generateMetadata({ params }: { params: { id: string } }): Metadata {
-  const m = getMarket(params.id);
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const m = await getMarket(params.id);
   return { title: m ? `${m.name} (${m.id}) · COT Positioning` : 'COT Positioning' };
 }
 
@@ -42,8 +37,8 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
   );
 }
 
-export default function MarketPage({ params }: { params: { id: string } }) {
-  const m = getMarket(params.id);
+export default async function MarketPage({ params }: { params: { id: string } }) {
+  const m = await getMarket(params.id);
   if (!m) notFound();
 
   const s = summarize(m);
